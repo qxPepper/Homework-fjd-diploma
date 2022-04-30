@@ -1,0 +1,23 @@
+{
+  "properties": [
+    {
+      "name": "cors.domain",
+      "type": "java.lang.String",
+      "description": "Description for cors.domain."
+    },
+    {
+      "name": "jwt.secret",
+      "type": "java.lang.String",
+      "description": "Description for jwt.secret."
+    },
+    {
+      "name": "jwt.sessionTime",
+      "type": "java.lang.String",
+      "description": "Description for jwt.sessionTime."
+    },
+    {
+      "name": "cloud.dir",
+      "type": "java.lang.String",
+      "description": "Description for cloud.dir."
+    }
+  ] }

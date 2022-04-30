@@ -1,0 +1,46 @@
+version: '3.0'
+
+services:
+
+  front-service:
+    build: netology-diplom-frontend/
+    container_name: front_container
+    command: npm serve
+    ports:
+      - "8081:8081"
+    depends_on:
+      - spring-service
+    networks:
+      - network_front_spring
+
+  spring-service:
+    build:
+      context: ./
+    container_name: spring_container
+    volumes:
+      - C:/Diploma/Cloud:/var/lib/cloud
+      - C:/Diploma/My_computer/Files:/var/lib/files
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql-service
+    networks:
+      - network_front_spring
+      - network_spring_mysql
+
+  mysql-service:
+    image: mysql:5.7.37
+    container_name: mysql_container
+    volumes:
+      - C:/Diploma/My_computer/Data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_DATABASE: my_database
+    ports:
+      - "3306:3306"
+    networks:
+      - network_spring_mysql
+
+networks:
+  network_front_spring:
+  network_spring_mysql:
