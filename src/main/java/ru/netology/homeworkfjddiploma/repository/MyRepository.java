@@ -24,13 +24,13 @@ public class MyRepository {
     private final String INSERT_blob = "insert into %s(%s, %s, %s, %s) values(?, ?, ?, ?)";
     private final String SELECT_blob = "select * from %s where %s = ?";
 
+//        private final String url = "jdbc:mysql://localhost:3306/cloud_database";
     private final String url = "jdbc:mysql://mysql-service/my_database";
-//    private final String url = "jdbc:mysql://localhost:3306/my_db_0";
     private final String username = "root";
     private final String password = "mysql";
 
-        private static final String CLOUD_DIR = "/var/lib/cloud";
-//    private static final String CLOUD_DIR = "cloud/";
+//        private static final String CLOUD_DIR = "cloud/";
+    private static final String CLOUD_DIR = "/var/lib/cloud/";
 
     private Connection connection = createConnection();
 

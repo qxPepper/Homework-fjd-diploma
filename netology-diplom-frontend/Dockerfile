@@ -1,6 +1,6 @@
 FROM node:14.15.4-alpine
 
-EXPOSE 8081
+EXPOSE 8080
 
 COPY package.json ./
 COPY package-lock.json ./
@@ -9,5 +9,5 @@ RUN npm install
 
 COPY ./ ./
 
-CMD ["npm", "serve"]
+CMD ["npm", "run", "serve"]
 #CMD ["npm", "start"]
