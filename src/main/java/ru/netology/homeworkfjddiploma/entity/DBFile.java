@@ -5,7 +5,6 @@ import lombok.Data;
 import javax.persistence.*;
 import java.sql.Timestamp;
 
-
 @Data
 @Entity
 @Table(name = "blobs")
@@ -21,7 +20,7 @@ public class DBFile {
     private Timestamp date;
 
     @Column(nullable = false)
-    private Long size;
+    private int size;
 
     @Lob
     private byte[] data;

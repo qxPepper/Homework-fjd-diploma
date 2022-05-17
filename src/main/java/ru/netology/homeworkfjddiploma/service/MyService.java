@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import ru.netology.homeworkfjddiploma.model.FileResponse;
 import ru.netology.homeworkfjddiploma.repository.MyRepository;
 
 import java.io.IOException;
@@ -27,7 +28,7 @@ public class MyService {
         return myRepository.deleteFile(filename);
     }
 
-    public ResponseEntity<List<String>> getFiles(int limit) {
+    public ResponseEntity<List<FileResponse>> getFiles(int limit) {
         return myRepository.getFiles(limit);
     }
 

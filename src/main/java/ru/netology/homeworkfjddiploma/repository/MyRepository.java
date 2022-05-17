@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import ru.netology.homeworkfjddiploma.entity.DBFile;
+import ru.netology.homeworkfjddiploma.model.FileResponse;
 
 import java.io.*;
 
@@ -34,12 +35,14 @@ public class MyRepository {
 
     @Autowired
     private MyUserRepository myUserRepository;
+
     public MyUserRepository getMyUserRepository() {
         return myUserRepository;
     }
 
     @Autowired
     private DBFileRepository dbFileRepository;
+
     public DBFileRepository getDbFileRepository() {
         return dbFileRepository;
     }
@@ -65,7 +68,7 @@ public class MyRepository {
         File file = new File(CLOUD_DIR + filename);
         Timestamp date = new Timestamp(System.currentTimeMillis());
 
-        Long size = (Long) file.length();
+        int size = (int) file.length();
 
         try {
             String sql = String.format(INSERT_blob, "blobs", "data", "filename", "date", "size");
@@ -111,22 +114,25 @@ public class MyRepository {
         }
     }
 
-    public ResponseEntity<List<String>> getFiles(int limit) {
+    public ResponseEntity<List<FileResponse>> getFiles(int limit) {
         List<DBFile> allFiles = dbFileRepository.findAll();
-        List<String> files = new ArrayList<>();
-        int index = 0;
+        List<FileResponse> files = new ArrayList<>();
 
-        for (DBFile item : allFiles) {
-            if (index >= limit) {
-                break;
-            } else {
-                files.add(item.getFilename());
-                index++;
+        if (allFiles.size() >= 1) {
+            int index = 0;
+
+            for (DBFile item : allFiles) {
+                if (index >= limit) {
+                    break;
+                } else {
+                    FileResponse fileResponse = new FileResponse(item.getFilename(), item.getSize());
+                    files.add(fileResponse);
+                    index++;
+                }
             }
         }
-        return !files.isEmpty()
-                ? new ResponseEntity<>(files, HttpStatus.OK)
-                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        return new ResponseEntity<>(files, HttpStatus.OK);
     }
 
     @Transactional

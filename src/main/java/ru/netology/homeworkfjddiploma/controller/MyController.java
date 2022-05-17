@@ -3,6 +3,7 @@ package ru.netology.homeworkfjddiploma.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import ru.netology.homeworkfjddiploma.model.FileResponse;
 import ru.netology.homeworkfjddiploma.service.MyService;
 
 import java.io.IOException;
@@ -33,7 +34,8 @@ public class MyController {
     }
 
     @GetMapping("list")
-    public ResponseEntity<List<String>> getFiles(@RequestParam(value = "limit") int limit) {
+    public ResponseEntity<List<FileResponse>> getFiles(@RequestParam(value = "limit") int limit) {
+
         return myService.getFiles(limit);
     }
 

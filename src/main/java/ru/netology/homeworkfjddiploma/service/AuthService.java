@@ -10,15 +10,15 @@ import ru.netology.homeworkfjddiploma.entity.MyUser;
 import ru.netology.homeworkfjddiploma.repository.MyUserRepository;
 
 @Service
-public class AuthService implements UserDetailsService{
+public class AuthService implements UserDetailsService {
     @Autowired
     private MyUserRepository myUserRepository;
 
     @Override
     public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
-        MyUser myUser= myUserRepository.findByLogin(userName);
+        MyUser myUser = myUserRepository.findByLogin(userName);
         if (myUser == null) {
-            throw new UsernameNotFoundException("Unknown user: "+userName);
+            throw new UsernameNotFoundException("Unknown user: " + userName);
         }
         return User.builder()
                 .username(myUser.getLogin())

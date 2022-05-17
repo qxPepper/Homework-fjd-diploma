@@ -11,7 +11,7 @@ import java.util.List;
 
 @Repository
 public interface DBFileRepository extends JpaRepository<DBFile, Long> {
-    DBFile findDBFileByFilename (@Param("filename") String filename);
+    DBFile findDBFileByFilename(@Param("filename") String filename);
 
     @Modifying
     void deleteDBFileByFilename(@Param("filename") String filename);

@@ -32,7 +32,7 @@ public class AuthController {
         try {
             authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.getLogin(), authRequest.getPassword()));
         } catch (BadCredentialsException e) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Имя или пароль неправильны", e);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Имя или пароль неправильные", e);
         }
         String token = jwtTokenUtil.generateToken((UserDetails) authentication.getPrincipal());
 

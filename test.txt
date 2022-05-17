@@ -1,8 +1,0 @@
-1. application.properties (spring.datasource.url)
-2. application.properties (cors.domain)
-
-3. MyRepository (private final String url)
-4. MyRepository (private static final String CLOUD_DIR)
-
-5. docker-compose
-
