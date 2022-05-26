@@ -5,21 +5,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import ru.netology.homeworkfjddiploma.entity.DBFile;
+import ru.netology.homeworkfjddiploma.model.AuthEditFilename;
 import ru.netology.homeworkfjddiploma.model.FileResponse;
 
 import java.io.*;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Repository
+@Transactional
 public class MyRepository {
     private PreparedStatement ps = null;
     private final String INSERT_blob = "insert into %s(%s, %s, %s, %s) values(?, ?, ?, ?)";
@@ -28,6 +28,8 @@ public class MyRepository {
     private final String url = "jdbc:mysql://mysql-service/my_database";
     private final String username = "root";
     private final String password = "mysql";
+
+    private final int BUFFER_length = 2 * 1024;
 
     private static final String CLOUD_DIR = "/var/lib/cloud/";
 
@@ -48,74 +50,104 @@ public class MyRepository {
     }
 
     public ResponseEntity<?> uploadFile(MultipartFile file, String filename) {
-        Path target = Paths.get(CLOUD_DIR + File.separator
-                + StringUtils.cleanPath(Objects.requireNonNull(filename)));
-        try {
-            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException exception) {
-            exception.printStackTrace();
-        }
+        String content = "";
+        Blob blob = null;
 
-        return isFilePresent(target.getFileName().toString(), new File(CLOUD_DIR))
-                ? new ResponseEntity<>(HttpStatus.OK)
-                : new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+        if (isFilePresent(filename)) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } else {
+            ZoneId zona = ZoneId.of("Europe/Moscow");
+            LocalDateTime date = LocalDateTime.now(zona);
+
+            int size = (int) file.getSize();
+
+            try {
+                String sql = String.format(INSERT_blob, "blobs", "data", "filename", "date", "size");
+
+                FileInputStream is = (FileInputStream) file.getInputStream();
+                ps = connection.prepareStatement(sql);
+                ps.setBinaryStream(1, is, size);
+                ps.setString(2, filename);
+                ps.setObject(3, date);
+                ps.setInt(4, size);
+                ps.executeUpdate();
+
+                connection.commit();
+                ps.close();
+
+                sql = String.format(SELECT_blob, "blobs", "filename");
+                ps = connection.prepareStatement(sql);
+                ps.setString(1, filename);
+                ResultSet rs = ps.executeQuery();
+
+                while (rs.next()) {
+                    blob = rs.getBlob(2);
+                    content = rs.getString(2);
+                }
+
+            } catch (SQLException | IOException e) {
+                e.printStackTrace();
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+            return new ResponseEntity<>(content, HttpStatus.OK);
+        }
     }
 
     public ResponseEntity<?> downloadFile(String filename) {
-        Blob blob = null;
         String content = "";
+        Blob blob = null;
+        String sql = String.format(SELECT_blob, "blobs", "filename");
 
-        File file = new File(CLOUD_DIR + filename);
-        Timestamp date = new Timestamp(System.currentTimeMillis());
+        if (!isFilePresent(filename)) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } else {
+            try {
+                ps = connection.prepareStatement(sql);
+                ps.setString(1, filename);
+                ResultSet rs = ps.executeQuery();
 
-        int size = (int) file.length();
+                if (rs.next()) {
+                    blob = rs.getBlob(2);
+                    content = rs.getString(2);
+                }
 
-        try {
-            String sql = String.format(INSERT_blob, "blobs", "data", "filename", "date", "size");
-            FileInputStream is = new FileInputStream(file);
-            ps = connection.prepareStatement(sql);
-            ps.setBinaryStream(1, is, size);
-            ps.setString(2, filename);
-            ps.setTimestamp(3, date);
-            ps.setLong(4, size);
-            ps.executeUpdate();
-
-            connection.commit();
-            ps.close();
-
-            sql = String.format(SELECT_blob, "blobs", "filename");
-            ps = connection.prepareStatement(sql);
-            ps.setString(1, filename);
-
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                blob = rs.getBlob(2);
-                content = rs.getString(2);
+                if (blob != null) {
+                    OutputStream os = new FileOutputStream(CLOUD_DIR + filename);
+                    InputStream is = blob.getBinaryStream();
+                    int length = -1;
+                    byte[] buf = new byte[BUFFER_length];
+                    while ((length = is.read(buf)) != -1) {
+                        os.write(buf, 0, length);
+                    }
+                    is.close();
+                    os.close();
+                }
+            } catch (SQLException | IOException e) {
+                e.printStackTrace();
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
+            return isFilePresent(filename, new File(CLOUD_DIR))
+                    ? new ResponseEntity<>(content, HttpStatus.OK)
+                    : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        return !content.equals("")
-                ? new ResponseEntity<>(content, HttpStatus.OK)
-                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    @Transactional
     public ResponseEntity<?> deleteFile(String filename) {
         if (!isFilePresent(filename)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } else {
             dbFileRepository.deleteDBFileByFilename(filename);
             return !isFilePresent(filename)
                     ? new ResponseEntity<>(HttpStatus.OK)
-                    : new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+                    : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     public ResponseEntity<List<FileResponse>> getFiles(int limit) {
         List<DBFile> allFiles = dbFileRepository.findAll();
+        if (allFiles == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         List<FileResponse> files = new ArrayList<>();
 
         if (allFiles.size() >= 1) {
@@ -125,28 +157,42 @@ public class MyRepository {
                 if (index >= limit) {
                     break;
                 } else {
-                    FileResponse fileResponse = new FileResponse(item.getFilename(), item.getSize());
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy hh:mm");
+
+                    FileResponse fileResponse = new FileResponse(item.getFilename(),
+                            item.getDate().format(formatter), item.getSize());
                     files.add(fileResponse);
                     index++;
                 }
             }
         }
-
-        return new ResponseEntity<>(files, HttpStatus.OK);
+        return files != null
+                ? new ResponseEntity<>(files, HttpStatus.OK)
+                : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @Transactional
-    public ResponseEntity<?> editFilename(String name, String filename) {
+    public ResponseEntity<?> updateFile(AuthEditFilename authEditFilename, String filename) {
         DBFile fileIn = getDbFileRepository().findDBFileByFilename(filename);
+        if (!isFilePresent(filename)) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        getDbFileRepository().editFilenameById(authEditFilename.getName(), fileIn.getId());
 
-        getDbFileRepository().editFilenameById(name, fileIn.getId());
-
-        return isFilePresent(name)
+        return isFilePresent(authEditFilename.getName())
                 ? new ResponseEntity<>(HttpStatus.OK)
-                : new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+                : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     // private
+    private boolean isFilePresent(String filename) {
+        boolean isFile = false;
+        DBFile dbFile = dbFileRepository.findDBFileByFilename(filename);
+        if (dbFile != null) {
+            isFile = true;
+        }
+        return isFile;
+    }
+
     private boolean isFilePresent(String filename, File dir) {
         boolean isFile = false;
         for (File item : Objects.requireNonNull(dir.listFiles())) {
@@ -157,15 +203,6 @@ public class MyRepository {
                     break;
                 }
             }
-        }
-        return isFile;
-    }
-
-    private boolean isFilePresent(String filename) {
-        boolean isFile = false;
-        DBFile dbFile = dbFileRepository.findDBFileByFilename(filename);
-        if (dbFile != null) {
-            isFile = true;
         }
         return isFile;
     }

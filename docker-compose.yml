@@ -18,8 +18,7 @@ services:
       context: ./
     container_name: spring_container
     volumes:
-      - C:/Diploma/Cloud:/var/lib/cloud
-      - C:/Diploma/My_computer/Files:/var/lib/files
+      - C:/Diploma/Downloads:/var/lib/cloud
     ports:
       - "8080:8080"
     depends_on:
@@ -32,7 +31,7 @@ services:
     image: mysql:latest
     container_name: mysql_container
     volumes:
-      - C:/Diploma/My_computer/Data:/var/lib/mysql
+      - C:/Diploma/DataBase:/var/lib/mysql
     environment:
       MYSQL_ROOT_PASSWORD: mysql
       MYSQL_DATABASE: my_database

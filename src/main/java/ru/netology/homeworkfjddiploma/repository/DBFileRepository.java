@@ -21,5 +21,5 @@ public interface DBFileRepository extends JpaRepository<DBFile, Long> {
 
     @Modifying
     @Query(value = "update DBFile d set d.filename=:name where d.id=:id")
-    void editFilenameById(@Param("name") String name1, @Param("id") Long id);
+    void editFilenameById(@Param("name") String name, @Param("id") Long id);
 }

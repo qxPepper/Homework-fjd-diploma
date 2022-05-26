@@ -9,13 +9,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import ru.netology.homeworkfjddiploma.security.AuthRequest;
+import ru.netology.homeworkfjddiploma.model.AuthRequest;
 import ru.netology.homeworkfjddiploma.security.JWTUtil;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @RestController
+@CrossOrigin("http://localhost:8081")
 @RequestMapping("/")
 public class AuthController {
 
@@ -30,9 +31,10 @@ public class AuthController {
     public Map<String, String> login(@RequestBody AuthRequest authRequest) {
         Authentication authentication;
         try {
-            authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.getLogin(), authRequest.getPassword()));
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authRequest.getLogin(), authRequest.getPassword()));
         } catch (BadCredentialsException e) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Имя или пароль неправильные", e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bad credentials", e);
         }
         String token = jwtTokenUtil.generateToken((UserDetails) authentication.getPrincipal());
 

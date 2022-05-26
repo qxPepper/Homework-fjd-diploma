@@ -26,33 +26,34 @@ public class JWTFilter extends OncePerRequestFilter {
     AuthService authService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-            throws ServletException, IOException {
-
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) {
         final String authTokenHeader = request.getHeader("auth-token");
         String username = null;
         String jwt = null;
 
-        if (authTokenHeader != null) {
-            if (authTokenHeader.startsWith("Bearer ")) {
-                jwt = authTokenHeader.substring(7);
-            } else {
-                jwt = authTokenHeader;
+        try {
+            if (authTokenHeader != null) {
+                if (authTokenHeader.startsWith("Bearer ")) {
+                    jwt = authTokenHeader.substring(7);
+                } else {
+                    jwt = authTokenHeader;
+                }
+                username = jwtUtil.extractUsername(jwt);
             }
-            username = jwtUtil.extractUsername(jwt);
+
+            if (username != null) {
+                String listOfAuthorities = jwtUtil.extractAuthorities(jwt);
+                List<GrantedAuthority> authorities = AuthorityUtils.commaSeparatedStringToAuthorityList(listOfAuthorities);
+
+                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
+                        new UsernamePasswordAuthenticationToken(
+                                username, null, authorities);
+
+                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+            }
+            chain.doFilter(request, response);
+        } catch (ServletException | IOException e) {
+            e.printStackTrace();
         }
-
-        if (username != null) {
-            String listOfAuthorities = jwtUtil.extractAuthorities(jwt);
-            List<GrantedAuthority> authorities = AuthorityUtils.commaSeparatedStringToAuthorityList(listOfAuthorities);
-
-            UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
-                    new UsernamePasswordAuthenticationToken(
-                            username, null, authorities);
-
-            SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-
-        }
-        chain.doFilter(request, response);
     }
 }

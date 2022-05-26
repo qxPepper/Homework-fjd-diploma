@@ -1,4 +1,4 @@
-package ru.netology.homeworkfjddiploma.security;
+package ru.netology.homeworkfjddiploma.model;
 
 import lombok.Getter;
 import lombok.Setter;

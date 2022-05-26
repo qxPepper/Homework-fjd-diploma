@@ -3,7 +3,7 @@ package ru.netology.homeworkfjddiploma.entity;
 import lombok.Data;
 
 import javax.persistence.*;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -17,7 +17,7 @@ public class DBFile {
     private String filename;
 
     @Column(nullable = false)
-    private Timestamp date;
+    private LocalDateTime date;
 
     @Column(nullable = false)
     private int size;
